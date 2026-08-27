@@ -8,6 +8,21 @@ from app.models.goal import Goal
 from app.schemas.goal import GoalCreate
 
 
+async def assert_no_cycle(
+    session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID, parent_id: uuid.UUID
+) -> None:
+    if parent_id == goal_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "a goal cannot be its own parent")
+
+    ancestor_id: uuid.UUID | None = parent_id
+    while ancestor_id is not None:
+        if ancestor_id == goal_id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "a goal cannot be its own ancestor")
+        ancestor_id = await session.scalar(
+            select(Goal.parent_id).where(Goal.id == ancestor_id, Goal.user_id == user_id)
+        )
+
+
 async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCreate) -> Goal:
     if payload.parent_id is not None:
         parent = await session.scalar(
@@ -19,6 +34,7 @@ async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCr
         )
         if parent is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "parent goal not found")
+        await assert_no_cycle(session, user_id, payload.id, payload.parent_id)
 
     goal = Goal(
         id=payload.id,
