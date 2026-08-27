@@ -19,11 +19,11 @@ async def upsert_completion(
     is_numeric = commitment.type == CommitmentType.numeric
     if is_numeric and payload.value is None:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, "value is required for numeric commitments"
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "value is required for numeric commitments"
         )
     if not is_numeric and payload.value is not None:
         raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY, "value is only valid for numeric commitments"
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "value is only valid for numeric commitments"
         )
 
     completion = await session.scalar(
