@@ -11,3 +11,5 @@
 - `User` does not get `SyncMixin`/`change_seq`: Phase 6 lists only goals, commitments,
   completions and journal as synced tables, and users authenticate directly against the
   server rather than syncing peer-to-peer.
+- Refresh tokens expire after a fixed 30 days (`REFRESH_TOKEN_EXPIRY_DAYS`): the spec's
+  `Settings` only names one "jwt expiry", used here for access tokens.
