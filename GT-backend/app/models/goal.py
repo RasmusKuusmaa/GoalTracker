@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import Uuid as SAUuid
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,9 +18,10 @@ class GoalStatus(enum.StrEnum):
 
 class Goal(Base, TimestampMixin, SyncMixin):
     __tablename__ = "goals"
+    __table_args__ = (Index("ix_goals_user_id_parent_id", "user_id", "parent_id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(SAUuid, primary_key=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(SAUuid, ForeignKey("users.id"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(SAUuid, ForeignKey("users.id"))
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         SAUuid, ForeignKey("goals.id"), nullable=True
     )
