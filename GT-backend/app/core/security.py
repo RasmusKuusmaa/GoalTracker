@@ -38,3 +38,7 @@ def create_refresh_token(user_id: uuid.UUID) -> str:
     return _create_token(
         user_id, "refresh", timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS)
     )
+
+
+def decode_token(token: str) -> dict[str, str]:
+    return jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
