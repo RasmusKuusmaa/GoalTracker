@@ -3,6 +3,18 @@ name = "goal-tracker-backend"
 version = "0.1.0"
 description = "FastAPI backend for Goal Tracker"
 requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy>=2,<3",
+    "alembic",
+    "psycopg[binary]",
+    "pydantic>=2,<3",
+    "pydantic-settings",
+    "passlib[bcrypt]",
+    "pyjwt",
+    "python-multipart",
+]
 
 [build-system]
 requires = ["hatchling"]
