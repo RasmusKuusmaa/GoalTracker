@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.models import (  # noqa: F401  ensure models are registered on Base.metadata
     commitment,
+    completion,
     goal,
     user,
 )
