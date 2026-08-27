@@ -5,3 +5,6 @@
 - Test-database fixture uses an in-memory SQLite database (via `aiosqlite`, dev-only dependency)
   instead of a real Postgres, to avoid depending on / colliding with local Docker Postgres
   containers belonging to other projects on this machine.
+- Backend directory renamed from `backend/` to `GT-backend/` at the user's request, after a
+  `docker compose` project-name collision with an unrelated `companal/backend` project on this
+  machine reconfigured that project's running container.
