@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,8 +8,8 @@ from app.api.deps import get_current_user
 from app.db.session import get_session
 from app.models.commitment import Commitment
 from app.models.user import User
-from app.schemas.commitment import CommitmentCreate, CommitmentRead
-from app.services.commitments import create_commitment
+from app.schemas.commitment import CommitmentCreate, CommitmentRead, CommitmentUpdate
+from app.services.commitments import create_commitment, update_commitment
 
 router = APIRouter(prefix="/commitments", tags=["commitments"])
 
@@ -35,3 +37,13 @@ async def list_commitments(
         query = query.where(Commitment.archived_at.is_(None))
     result = await session.scalars(query)
     return list(result)
+
+
+@router.patch("/{commitment_id}", response_model=CommitmentRead)
+async def patch_commitment(
+    commitment_id: uuid.UUID,
+    payload: CommitmentUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Commitment:
+    return await update_commitment(session, current_user.id, commitment_id, payload)
