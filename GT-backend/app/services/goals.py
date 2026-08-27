@@ -10,6 +10,17 @@ from app.schemas.goal import GoalCreate
 MAX_GOAL_DEPTH = 5
 
 
+async def get_owned_goal(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID) -> Goal:
+    goal = await session.scalar(
+        select(Goal).where(
+            Goal.id == goal_id, Goal.user_id == user_id, Goal.deleted_at.is_(None)
+        )
+    )
+    if goal is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "goal not found")
+    return goal
+
+
 async def depth_of(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID) -> int:
     depth = 1
     ancestor_id: uuid.UUID | None = await session.scalar(
