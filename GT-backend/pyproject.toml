@@ -24,6 +24,7 @@ dev = [
     "ruff",
     "mypy",
     "aiosqlite",
+    "types-passlib",
 ]
 
 [build-system]
