@@ -13,3 +13,5 @@
   server rather than syncing peer-to-peer.
 - Refresh tokens expire after a fixed 30 days (`REFRESH_TOKEN_EXPIRY_DAYS`): the spec's
   `Settings` only names one "jwt expiry", used here for access tokens.
+- Pinned `bcrypt<4.1`: passlib 1.7.4's bcrypt backend detection crashes against bcrypt>=4.1,
+  which removed the `__about__` module it reads for a version check.
