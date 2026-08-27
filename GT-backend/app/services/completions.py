@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -47,3 +48,17 @@ async def upsert_completion(
     await session.commit()
     await session.refresh(completion)
     return completion
+
+
+async def list_completions(
+    session: AsyncSession, user_id: uuid.UUID, date_from: date, date_to: date
+) -> list[Completion]:
+    result = await session.scalars(
+        select(Completion).where(
+            Completion.user_id == user_id,
+            Completion.local_date >= date_from,
+            Completion.local_date <= date_to,
+            Completion.deleted_at.is_(None),
+        )
+    )
+    return list(result)
