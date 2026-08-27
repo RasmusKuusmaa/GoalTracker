@@ -1,0 +1,35 @@
+import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.goal import Goal
+from app.schemas.goal import GoalCreate
+
+
+async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCreate) -> Goal:
+    if payload.parent_id is not None:
+        parent = await session.scalar(
+            select(Goal).where(
+                Goal.id == payload.parent_id,
+                Goal.user_id == user_id,
+                Goal.deleted_at.is_(None),
+            )
+        )
+        if parent is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "parent goal not found")
+
+    goal = Goal(
+        id=payload.id,
+        user_id=user_id,
+        parent_id=payload.parent_id,
+        title=payload.title,
+        description=payload.description,
+        target_date=payload.target_date,
+        sort_order=payload.sort_order,
+    )
+    session.add(goal)
+    await session.commit()
+    await session.refresh(goal)
+    return goal
