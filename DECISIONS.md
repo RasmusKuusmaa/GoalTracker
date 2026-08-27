@@ -8,3 +8,6 @@
 - Backend directory renamed from `backend/` to `GT-backend/` at the user's request, after a
   `docker compose` project-name collision with an unrelated `companal/backend` project on this
   machine reconfigured that project's running container.
+- `User` does not get `SyncMixin`/`change_seq`: Phase 6 lists only goals, commitments,
+  completions and journal as synced tables, and users authenticate directly against the
+  server rather than syncing peer-to-peer.
