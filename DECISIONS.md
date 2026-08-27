@@ -15,3 +15,8 @@
   `Settings` only names one "jwt expiry", used here for access tokens.
 - Pinned `bcrypt<4.1`: passlib 1.7.4's bcrypt backend detection crashes against bcrypt>=4.1,
   which removed the `__about__` module it reads for a version check.
+- `Goal` (the first model using `SyncMixin`) fails to insert under the sqlite test fixture:
+  SQLite has no equivalent to Postgres's `Identity()`/bigserial for a non-primary-key column, so
+  `change_seq` never gets populated. Added a test-only `before_insert` event in
+  `tests/conftest.py` that assigns `change_seq` client-side when the dialect is sqlite; Postgres
+  keeps using the real server-generated identity untouched.
