@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -62,3 +62,26 @@ async def list_completions(
         )
     )
     return list(result)
+
+
+async def get_owned_completion(
+    session: AsyncSession, user_id: uuid.UUID, completion_id: uuid.UUID
+) -> Completion:
+    completion = await session.scalar(
+        select(Completion).where(
+            Completion.id == completion_id,
+            Completion.user_id == user_id,
+            Completion.deleted_at.is_(None),
+        )
+    )
+    if completion is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "completion not found")
+    return completion
+
+
+async def soft_delete_completion(
+    session: AsyncSession, user_id: uuid.UUID, completion_id: uuid.UUID
+) -> None:
+    completion = await get_owned_completion(session, user_id, completion_id)
+    completion.deleted_at = datetime.now(UTC)
+    await session.commit()
