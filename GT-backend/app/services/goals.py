@@ -93,6 +93,34 @@ async def complete_goal(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid
     return goal
 
 
+async def soft_delete_goal(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID) -> None:
+    await get_owned_goal(session, user_id, goal_id)
+
+    rows = await session.execute(
+        select(Goal.id, Goal.parent_id).where(
+            Goal.user_id == user_id, Goal.deleted_at.is_(None)
+        )
+    )
+    children_by_parent: dict[uuid.UUID | None, list[uuid.UUID]] = {}
+    for row_id, parent_id in rows:
+        children_by_parent.setdefault(parent_id, []).append(row_id)
+
+    to_delete = [goal_id]
+    queue = [goal_id]
+    while queue:
+        current = queue.pop()
+        children = children_by_parent.get(current, [])
+        to_delete.extend(children)
+        queue.extend(children)
+
+    now = datetime.now(UTC)
+    goals = await session.scalars(select(Goal).where(Goal.id.in_(to_delete)))
+    for goal in goals:
+        goal.deleted_at = now
+
+    await session.commit()
+
+
 async def update_goal(
     session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID, payload: GoalUpdate
 ) -> Goal:
