@@ -16,6 +16,7 @@ async def db_connection() -> AsyncIterator[AsyncConnection]:
     engine = create_test_engine("sqlite+aiosqlite://", poolclass=StaticPool)
     async with engine.connect() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        await connection.commit()
         transaction = await connection.begin()
         try:
             yield connection
