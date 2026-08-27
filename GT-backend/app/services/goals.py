@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.goal import Goal
-from app.schemas.goal import GoalCreate
+from app.schemas.goal import GoalCreate, GoalUpdate
 
 MAX_GOAL_DEPTH = 5
 
@@ -49,20 +49,24 @@ async def assert_no_cycle(
         )
 
 
+async def assert_valid_parent(
+    session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID, parent_id: uuid.UUID
+) -> None:
+    parent = await session.scalar(
+        select(Goal).where(
+            Goal.id == parent_id, Goal.user_id == user_id, Goal.deleted_at.is_(None)
+        )
+    )
+    if parent is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "parent goal not found")
+    await assert_no_cycle(session, user_id, goal_id, parent_id)
+    if await depth_of(session, user_id, parent_id) + 1 > MAX_GOAL_DEPTH:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "goal tree depth limit exceeded")
+
+
 async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCreate) -> Goal:
     if payload.parent_id is not None:
-        parent = await session.scalar(
-            select(Goal).where(
-                Goal.id == payload.parent_id,
-                Goal.user_id == user_id,
-                Goal.deleted_at.is_(None),
-            )
-        )
-        if parent is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "parent goal not found")
-        await assert_no_cycle(session, user_id, payload.id, payload.parent_id)
-        if await depth_of(session, user_id, payload.parent_id) + 1 > MAX_GOAL_DEPTH:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "goal tree depth limit exceeded")
+        await assert_valid_parent(session, user_id, payload.id, payload.parent_id)
 
     goal = Goal(
         id=payload.id,
@@ -74,6 +78,23 @@ async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCr
         sort_order=payload.sort_order,
     )
     session.add(goal)
+    await session.commit()
+    await session.refresh(goal)
+    return goal
+
+
+async def update_goal(
+    session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID, payload: GoalUpdate
+) -> Goal:
+    goal = await get_owned_goal(session, user_id, goal_id)
+    changes = payload.model_dump(exclude_unset=True)
+
+    if "parent_id" in changes and changes["parent_id"] is not None:
+        await assert_valid_parent(session, user_id, goal_id, changes["parent_id"])
+
+    for field, value in changes.items():
+        setattr(goal, field, value)
+
     await session.commit()
     await session.refresh(goal)
     return goal

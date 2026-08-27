@@ -8,8 +8,8 @@ from app.api.deps import get_current_user
 from app.db.session import get_session
 from app.models.goal import Goal
 from app.models.user import User
-from app.schemas.goal import GoalCreate, GoalRead
-from app.services.goals import create_goal, get_owned_goal
+from app.schemas.goal import GoalCreate, GoalRead, GoalUpdate
+from app.services.goals import create_goal, get_owned_goal, update_goal
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -42,3 +42,13 @@ async def get_goal(
     session: AsyncSession = Depends(get_session),
 ) -> Goal:
     return await get_owned_goal(session, current_user.id, goal_id)
+
+
+@router.patch("/{goal_id}", response_model=GoalRead)
+async def patch_goal(
+    goal_id: uuid.UUID,
+    payload: GoalUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Goal:
+    return await update_goal(session, current_user.id, goal_id, payload)
