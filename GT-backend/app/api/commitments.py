@@ -9,7 +9,7 @@ from app.db.session import get_session
 from app.models.commitment import Commitment
 from app.models.user import User
 from app.schemas.commitment import CommitmentCreate, CommitmentRead, CommitmentUpdate
-from app.services.commitments import create_commitment, update_commitment
+from app.services.commitments import archive_commitment, create_commitment, update_commitment
 
 router = APIRouter(prefix="/commitments", tags=["commitments"])
 
@@ -47,3 +47,12 @@ async def patch_commitment(
     session: AsyncSession = Depends(get_session),
 ) -> Commitment:
     return await update_commitment(session, current_user.id, commitment_id, payload)
+
+
+@router.post("/{commitment_id}/archive", response_model=CommitmentRead)
+async def archive_commitment_endpoint(
+    commitment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> Commitment:
+    return await archive_commitment(session, current_user.id, commitment_id)

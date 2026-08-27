@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -39,6 +40,16 @@ async def create_commitment(
         active_until=payload.active_until,
     )
     session.add(commitment)
+    await session.commit()
+    await session.refresh(commitment)
+    return commitment
+
+
+async def archive_commitment(
+    session: AsyncSession, user_id: uuid.UUID, commitment_id: uuid.UUID
+) -> Commitment:
+    commitment = await get_owned_commitment(session, user_id, commitment_id)
+    commitment.archived_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(commitment)
     return commitment
