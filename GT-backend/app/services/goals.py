@@ -7,6 +7,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.goal import Goal
 from app.schemas.goal import GoalCreate
 
+MAX_GOAL_DEPTH = 5
+
+
+async def depth_of(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID) -> int:
+    depth = 1
+    ancestor_id: uuid.UUID | None = await session.scalar(
+        select(Goal.parent_id).where(Goal.id == goal_id, Goal.user_id == user_id)
+    )
+    while ancestor_id is not None:
+        depth += 1
+        ancestor_id = await session.scalar(
+            select(Goal.parent_id).where(Goal.id == ancestor_id, Goal.user_id == user_id)
+        )
+    return depth
+
 
 async def assert_no_cycle(
     session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID, parent_id: uuid.UUID
@@ -35,6 +50,8 @@ async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCr
         if parent is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "parent goal not found")
         await assert_no_cycle(session, user_id, payload.id, payload.parent_id)
+        if await depth_of(session, user_id, payload.parent_id) + 1 > MAX_GOAL_DEPTH:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "goal tree depth limit exceeded")
 
     goal = Goal(
         id=payload.id,
