@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
+from app.api.goals import router as goals_router
 from app.core.config import settings
 
 app = FastAPI(title="Goal Tracker")
@@ -13,6 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(goals_router)
 
 
 @app.get("/health")
