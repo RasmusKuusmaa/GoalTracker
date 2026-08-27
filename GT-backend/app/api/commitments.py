@@ -9,7 +9,12 @@ from app.db.session import get_session
 from app.models.commitment import Commitment
 from app.models.user import User
 from app.schemas.commitment import CommitmentCreate, CommitmentRead, CommitmentUpdate
-from app.services.commitments import archive_commitment, create_commitment, update_commitment
+from app.services.commitments import (
+    archive_commitment,
+    create_commitment,
+    soft_delete_commitment,
+    update_commitment,
+)
 
 router = APIRouter(prefix="/commitments", tags=["commitments"])
 
@@ -56,3 +61,12 @@ async def archive_commitment_endpoint(
     session: AsyncSession = Depends(get_session),
 ) -> Commitment:
     return await archive_commitment(session, current_user.id, commitment_id)
+
+
+@router.delete("/{commitment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_commitment(
+    commitment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    await soft_delete_commitment(session, current_user.id, commitment_id)

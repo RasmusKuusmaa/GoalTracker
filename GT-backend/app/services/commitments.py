@@ -70,6 +70,14 @@ async def get_owned_commitment(
     return commitment
 
 
+async def soft_delete_commitment(
+    session: AsyncSession, user_id: uuid.UUID, commitment_id: uuid.UUID
+) -> None:
+    commitment = await get_owned_commitment(session, user_id, commitment_id)
+    commitment.deleted_at = datetime.now(UTC)
+    await session.commit()
+
+
 async def update_commitment(
     session: AsyncSession, user_id: uuid.UUID, commitment_id: uuid.UUID, payload: CommitmentUpdate
 ) -> Commitment:
