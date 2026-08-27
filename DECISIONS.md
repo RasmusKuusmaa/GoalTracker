@@ -23,3 +23,6 @@
 - `Commitment.journal_id` has no database FK constraint yet: the `journals` table doesn't exist
   until Phase 5. It's a plain nullable UUID column for now; ownership/existence validation is
   application-level in the schema/service layer (same as it will be once Phase 5 adds the FK).
+- `POST /commitments` validates `goal_id` ownership (goals already exist) but not `journal_id`
+  ownership: there is no `journals` table to check against until Phase 5. `journal_id` is
+  accepted as-is for now; Phase 5 will add the same ownership check used for `goal_id`.
