@@ -1,10 +1,11 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.goal import Goal
+from app.models.goal import Goal, GoalStatus
 from app.schemas.goal import GoalCreate, GoalUpdate
 
 MAX_GOAL_DEPTH = 5
@@ -78,6 +79,15 @@ async def create_goal(session: AsyncSession, user_id: uuid.UUID, payload: GoalCr
         sort_order=payload.sort_order,
     )
     session.add(goal)
+    await session.commit()
+    await session.refresh(goal)
+    return goal
+
+
+async def complete_goal(session: AsyncSession, user_id: uuid.UUID, goal_id: uuid.UUID) -> Goal:
+    goal = await get_owned_goal(session, user_id, goal_id)
+    goal.status = GoalStatus.completed
+    goal.completed_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(goal)
     return goal
