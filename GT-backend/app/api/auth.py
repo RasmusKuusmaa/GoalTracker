@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -14,7 +15,7 @@ from app.core.security import (
 from app.db.session import get_session
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -56,6 +57,24 @@ async def login(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
     )
+
+
+@router.get("/me", response_model=UserRead)
+async def get_me(current_user: User = Depends(get_current_user)) -> User:
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+async def update_me(
+    payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(current_user, field, value)
+    await session.commit()
+    await session.refresh(current_user)
+    return current_user
 
 
 @router.post("/refresh", response_model=TokenPair)
