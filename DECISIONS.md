@@ -20,3 +20,6 @@
   `change_seq` never gets populated. Added a test-only `before_insert` event in
   `tests/conftest.py` that assigns `change_seq` client-side when the dialect is sqlite; Postgres
   keeps using the real server-generated identity untouched.
+- `Commitment.journal_id` has no database FK constraint yet: the `journals` table doesn't exist
+  until Phase 5. It's a plain nullable UUID column for now; ownership/existence validation is
+  application-level in the schema/service layer (same as it will be once Phase 5 adds the FK).
