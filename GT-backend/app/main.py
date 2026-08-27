@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
 from app.api.commitments import router as commitments_router
+from app.api.completions import router as completions_router
 from app.api.goals import router as goals_router
 from app.core.config import settings
 
@@ -16,6 +17,7 @@ app.add_middleware(
 )
 app.include_router(auth_router)
 app.include_router(commitments_router)
+app.include_router(completions_router)
 app.include_router(goals_router)
 
 
