@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2,<3",
     "pydantic-settings",
     "passlib[bcrypt]",
+    "bcrypt<4.1",
     "pyjwt",
     "python-multipart",
 ]
