@@ -26,3 +26,8 @@
 - `POST /commitments` validates `goal_id` ownership (goals already exist) but not `journal_id`
   ownership: there is no `journals` table to check against until Phase 5. `journal_id` is
   accepted as-is for now; Phase 5 will add the same ownership check used for `goal_id`.
+- `app/schemas/journal_entry.py` has no pydantic validator enforcing value-vs-kind rules: a
+  journal entry's `journal_id` is the only link to its kind, which lives on the `Journal` row and
+  requires a database lookup unavailable at schema-parse time. That check lives in the upsert
+  service function once the journal is loaded, mirroring how completion-vs-commitment-type
+  validation was done in `services/completions.py` rather than `schemas/completion.py`.
