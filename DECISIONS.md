@@ -31,6 +31,10 @@
   requires a database lookup unavailable at schema-parse time. That check lives in the upsert
   service function once the journal is loaded, mirroring how completion-vs-commitment-type
   validation was done in `services/completions.py` rather than `schemas/completion.py`.
+- `flutter_riverpod` bumped from `^2.6.1` to `^3.4.2`: `riverpod_generator` (needed as a dev
+  dependency) only resolves against Riverpod 3.x; pinning `riverpod_generator` back to an old
+  2.x-compatible release seemed worse for a brand-new v1 project than starting on current
+  Riverpod.
 - Flutter app org set to `com.goaltracker` (`flutter create --org com.goaltracker`): the spec
   does not name a real org/domain, and this project has no distribution identity yet. Package
   name kept as the default derived from the `app/` directory name.
