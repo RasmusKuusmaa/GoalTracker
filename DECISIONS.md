@@ -31,6 +31,10 @@
   requires a database lookup unavailable at schema-parse time. That check lives in the upsert
   service function once the journal is loaded, mirroring how completion-vs-commitment-type
   validation was done in `services/completions.py` rather than `schemas/completion.py`.
+- Added `flutter_timezone` (not in the Phase 7 dependency list) to satisfy the register
+  screen's "timezone defaulted from the device" requirement: Dart's `DateTime` only exposes a
+  UTC offset and abbreviated zone name, neither of which is a valid IANA identifier
+  (`Europe/Tallinn`) as the backend's `User.timezone` requires.
 - Drift local tables store enum-like fields (goal status, commitment type/cadence/comparator,
   journal kind, completion status) as plain `TextColumn`s, not Drift type converters: keeps the
   schema simple for v1; Dart-side code converts to/from the app's enum types at the DAO
