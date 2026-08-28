@@ -23,6 +23,27 @@ class Goals extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class Completions extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get commitmentId => text()();
+  DateTimeColumn get localDate => dateTime()();
+  TextColumn get status => text()();
+  RealColumn get value => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {commitmentId, localDate},
+  ];
+}
+
 class Commitments extends Table {
   TextColumn get id => text()();
   TextColumn get userId => text()();
