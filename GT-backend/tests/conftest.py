@@ -23,13 +23,19 @@ from app.models import (  # noqa: F401  ensure models are registered on Base.met
 # SQLite has no equivalent to Postgres's Identity()/bigserial for a non-primary-key
 # column, so change_seq is never populated by the database itself under the sqlite
 # test fixture. Assign it client-side here, sqlite only; Postgres keeps generating it
-# server-side via Identity(always=True) untouched.
+# server-side via Identity(always=False), bumped on update by app.db.base._bump_change_seq.
 _sqlite_change_seq = count(1)
 
 
 @event.listens_for(SyncMixin, "before_insert", propagate=True)
 def _assign_sqlite_change_seq(mapper: object, connection: AsyncConnection, target: object) -> None:
     if connection.dialect.name == "sqlite" and getattr(target, "change_seq", None) is None:
+        target.change_seq = next(_sqlite_change_seq)  # type: ignore[attr-defined]
+
+
+@event.listens_for(SyncMixin, "before_update", propagate=True)
+def _bump_sqlite_change_seq(mapper: object, connection: AsyncConnection, target: object) -> None:
+    if connection.dialect.name == "sqlite":
         target.change_seq = next(_sqlite_change_seq)  # type: ignore[attr-defined]
 
 
