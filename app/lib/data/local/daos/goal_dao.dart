@@ -9,10 +9,10 @@ part 'goal_dao.g.dart';
 class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
   GoalDao(super.db);
 
-  Future<void> insert(GoalsCompanion entry) => into(goals).insert(entry);
+  Future<void> insert(GoalsCompanion entry) => into(goals).insert(_stamped(entry));
 
   Future<void> updateGoal(String id, GoalsCompanion entry) =>
-      (update(goals)..where((t) => t.id.equals(id))).write(entry);
+      (update(goals)..where((t) => t.id.equals(id))).write(_stamped(entry));
 
   Stream<List<Goal>> watchAll(String userId) {
     return (select(
@@ -32,8 +32,14 @@ class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
   }
 
   Future<void> softDelete(String id) {
-    return (update(
-      goals,
-    )..where((t) => t.id.equals(id))).write(GoalsCompanion(deletedAt: Value(DateTime.now())));
+    return (update(goals)..where((t) => t.id.equals(id))).write(
+      _stamped(GoalsCompanion(deletedAt: Value(DateTime.now()))),
+    );
+  }
+
+  /// Every local write marks the row dirty and bumps `updatedAt`, so the sync
+  /// service can find rows that still need to be pushed.
+  GoalsCompanion _stamped(GoalsCompanion entry) {
+    return entry.copyWith(dirty: const Value(true), updatedAt: Value(DateTime.now()));
   }
 }

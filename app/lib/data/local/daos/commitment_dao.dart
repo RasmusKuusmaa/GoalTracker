@@ -9,10 +9,10 @@ part 'commitment_dao.g.dart';
 class CommitmentDao extends DatabaseAccessor<AppDatabase> with _$CommitmentDaoMixin {
   CommitmentDao(super.db);
 
-  Future<void> insert(CommitmentsCompanion entry) => into(commitments).insert(entry);
+  Future<void> insert(CommitmentsCompanion entry) => into(commitments).insert(_stamped(entry));
 
   Future<void> updateCommitment(String id, CommitmentsCompanion entry) =>
-      (update(commitments)..where((t) => t.id.equals(id))).write(entry);
+      (update(commitments)..where((t) => t.id.equals(id))).write(_stamped(entry));
 
   Stream<List<Commitment>> watchActive(String userId) {
     return (select(commitments)..where(
@@ -22,14 +22,20 @@ class CommitmentDao extends DatabaseAccessor<AppDatabase> with _$CommitmentDaoMi
   }
 
   Future<void> archive(String id) {
-    return (update(
-      commitments,
-    )..where((t) => t.id.equals(id))).write(CommitmentsCompanion(archivedAt: Value(DateTime.now())));
+    return (update(commitments)..where((t) => t.id.equals(id))).write(
+      _stamped(CommitmentsCompanion(archivedAt: Value(DateTime.now()))),
+    );
   }
 
   Future<void> softDelete(String id) {
     return (update(commitments)..where((t) => t.id.equals(id))).write(
-      CommitmentsCompanion(deletedAt: Value(DateTime.now())),
+      _stamped(CommitmentsCompanion(deletedAt: Value(DateTime.now()))),
     );
+  }
+
+  /// Every local write marks the row dirty and bumps `updatedAt`, so the sync
+  /// service can find rows that still need to be pushed.
+  CommitmentsCompanion _stamped(CommitmentsCompanion entry) {
+    return entry.copyWith(dirty: const Value(true), updatedAt: Value(DateTime.now()));
   }
 }

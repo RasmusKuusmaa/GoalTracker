@@ -9,10 +9,10 @@ part 'journal_dao.g.dart';
 class JournalDao extends DatabaseAccessor<AppDatabase> with _$JournalDaoMixin {
   JournalDao(super.db);
 
-  Future<void> insert(JournalsCompanion entry) => into(journals).insert(entry);
+  Future<void> insert(JournalsCompanion entry) => into(journals).insert(_stamped(entry));
 
   Future<void> updateJournal(String id, JournalsCompanion entry) =>
-      (update(journals)..where((t) => t.id.equals(id))).write(entry);
+      (update(journals)..where((t) => t.id.equals(id))).write(_stamped(entry));
 
   Stream<List<Journal>> watchAll(String userId) {
     return (select(
@@ -22,7 +22,13 @@ class JournalDao extends DatabaseAccessor<AppDatabase> with _$JournalDaoMixin {
 
   Future<void> softDelete(String id) {
     return (update(journals)..where((t) => t.id.equals(id))).write(
-      JournalsCompanion(deletedAt: Value(DateTime.now())),
+      _stamped(JournalsCompanion(deletedAt: Value(DateTime.now()))),
     );
+  }
+
+  /// Every local write marks the row dirty and bumps `updatedAt`, so the sync
+  /// service can find rows that still need to be pushed.
+  JournalsCompanion _stamped(JournalsCompanion entry) {
+    return entry.copyWith(dirty: const Value(true), updatedAt: Value(DateTime.now()));
   }
 }
