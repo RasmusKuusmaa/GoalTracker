@@ -1,5 +1,6 @@
 import uuid
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.commitment import Commitment
@@ -37,6 +38,8 @@ async def _apply_goal(session: AsyncSession, row: GoalSyncRow) -> Goal:
         )
         session.add(goal)
         return goal
+    if existing.user_id != row.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
     if row.updated_at <= existing.updated_at:
         return existing
     existing.parent_id = row.parent_id
@@ -75,6 +78,8 @@ async def _apply_commitment(session: AsyncSession, row: CommitmentSyncRow) -> Co
         )
         session.add(commitment)
         return commitment
+    if existing.user_id != row.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
     if row.updated_at <= existing.updated_at:
         return existing
     existing.goal_id = row.goal_id
@@ -110,6 +115,8 @@ async def _apply_completion(session: AsyncSession, row: CompletionSyncRow) -> Co
         )
         session.add(completion)
         return completion
+    if existing.user_id != row.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
     if row.updated_at <= existing.updated_at:
         return existing
     existing.commitment_id = row.commitment_id
@@ -137,6 +144,8 @@ async def _apply_journal(session: AsyncSession, row: JournalSyncRow) -> Journal:
         )
         session.add(journal)
         return journal
+    if existing.user_id != row.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
     if row.updated_at <= existing.updated_at:
         return existing
     existing.name = row.name
@@ -164,6 +173,8 @@ async def _apply_journal_entry(session: AsyncSession, row: JournalEntrySyncRow) 
         )
         session.add(entry)
         return entry
+    if existing.user_id != row.user_id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
     if row.updated_at <= existing.updated_at:
         return existing
     existing.journal_id = row.journal_id
@@ -175,9 +186,25 @@ async def _apply_journal_entry(session: AsyncSession, row: JournalEntrySyncRow) 
     return existing
 
 
+def _assert_user_scoped(user_id: uuid.UUID, payload: SyncPushRequest) -> None:
+    rows: list[
+        GoalSyncRow | CommitmentSyncRow | CompletionSyncRow | JournalSyncRow | JournalEntrySyncRow
+    ] = [
+        *payload.goals,
+        *payload.commitments,
+        *payload.completions,
+        *payload.journals,
+        *payload.journal_entries,
+    ]
+    if any(row.user_id != user_id for row in rows):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
+
+
 async def push_sync(
     session: AsyncSession, user_id: uuid.UUID, payload: SyncPushRequest
 ) -> SyncPushResponse:
+    _assert_user_scoped(user_id, payload)
+
     goals = [await _apply_goal(session, row) for row in payload.goals]
     commitments = [await _apply_commitment(session, row) for row in payload.commitments]
     completions = [await _apply_completion(session, row) for row in payload.completions]
