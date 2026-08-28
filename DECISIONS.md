@@ -31,3 +31,10 @@
   requires a database lookup unavailable at schema-parse time. That check lives in the upsert
   service function once the journal is loaded, mirroring how completion-vs-commitment-type
   validation was done in `services/completions.py` rather than `schemas/completion.py`.
+- Sync rows (`app/schemas/sync.py`) omit `change_seq`: the cursor is opaque to the client, and
+  `change_seq` is a server-internal ordering column, not app data. The cursor itself is planned
+  as a per-entity map of last-seen `change_seq` values (JSON-encoded into the opaque string),
+  since each entity's identity sequence advances independently — a single scalar cursor value
+  could not resume each entity type correctly on its own. `SyncPullResponse.has_more` is one
+  flag for the whole response (true if any entity type was capped), not per entity: the client
+  only needs to know whether to call pull again, not which entity type was capped.
