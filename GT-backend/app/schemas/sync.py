@@ -112,3 +112,11 @@ class SyncPushRequest(BaseModel):
     completions: list[CompletionSyncRow] = Field(default_factory=list)
     journals: list[JournalSyncRow] = Field(default_factory=list)
     journal_entries: list[JournalEntrySyncRow] = Field(default_factory=list)
+
+
+class SyncPushResponse(BaseModel):
+    goals: list[GoalSyncRow] = Field(default_factory=list)
+    commitments: list[CommitmentSyncRow] = Field(default_factory=list)
+    completions: list[CompletionSyncRow] = Field(default_factory=list)
+    journals: list[JournalSyncRow] = Field(default_factory=list)
+    journal_entries: list[JournalEntrySyncRow] = Field(default_factory=list)

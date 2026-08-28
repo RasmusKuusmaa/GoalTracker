@@ -44,7 +44,8 @@ async def test_push_then_pull_round_trip(client: AsyncClient) -> None:
     }
 
     push_response = await client.post("/sync", json=push_payload, headers=headers)
-    assert push_response.status_code == 204
+    assert push_response.status_code == 200
+    assert push_response.json()["goals"][0]["id"] == goal_id
 
     pull_response = await client.get("/sync", headers=headers)
     assert pull_response.status_code == 200
