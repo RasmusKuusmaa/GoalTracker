@@ -7,6 +7,7 @@ from app.api.completions import router as completions_router
 from app.api.goals import router as goals_router
 from app.api.journal_entries import router as journal_entries_router
 from app.api.journals import router as journals_router
+from app.api.sync import router as sync_router
 from app.core.config import settings
 
 app = FastAPI(title="Goal Tracker")
@@ -23,6 +24,7 @@ app.include_router(completions_router)
 app.include_router(goals_router)
 app.include_router(journal_entries_router)
 app.include_router(journals_router)
+app.include_router(sync_router)
 
 
 @app.get("/health")
