@@ -22,3 +22,27 @@ class Goals extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class Commitments extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get goalId => text().nullable()();
+  TextColumn get journalId => text().nullable()();
+  TextColumn get title => text()();
+  TextColumn get type => text()();
+  TextColumn get cadence => text()();
+  IntColumn get targetCount => integer().nullable()();
+  RealColumn get targetValue => real().nullable()();
+  TextColumn get comparator => text().nullable()();
+  TextColumn get unit => text().nullable()();
+  DateTimeColumn get activeFrom => dateTime()();
+  DateTimeColumn get activeUntil => dateTime().nullable()();
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
