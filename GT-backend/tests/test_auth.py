@@ -70,3 +70,18 @@ async def test_me_unauthorised_without_token(client: AsyncClient) -> None:
     response = await client.get("/auth/me")
 
     assert response.status_code in (401, 403)
+
+
+async def test_register_seeds_default_journal(client: AsyncClient) -> None:
+    register = await client.post("/auth/register", json=REGISTER_PAYLOAD)
+    access_token = register.json()["access_token"]
+
+    response = await client.get(
+        "/journals", headers={"Authorization": f"Bearer {access_token}"}
+    )
+
+    assert response.status_code == 200
+    journals = response.json()
+    assert len(journals) == 1
+    assert journals[0]["name"] == "General"
+    assert journals[0]["kind"] == "text"

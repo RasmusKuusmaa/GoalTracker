@@ -13,6 +13,7 @@ from app.core.security import (
     verify_password,
 )
 from app.db.session import get_session
+from app.models.journal import Journal, JournalKind
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair
 from app.schemas.user import UserCreate, UserRead, UserUpdate
@@ -36,6 +37,11 @@ async def register(
         week_start=payload.week_start,
     )
     session.add(user)
+    await session.flush()
+
+    session.add(
+        Journal(id=uuid.uuid4(), user_id=user.id, name="General", kind=JournalKind.text)
+    )
     await session.commit()
     await session.refresh(user)
 
