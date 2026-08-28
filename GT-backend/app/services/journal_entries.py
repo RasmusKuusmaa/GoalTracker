@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -68,3 +68,26 @@ async def list_journal_entries(
         )
     )
     return list(result)
+
+
+async def get_owned_journal_entry(
+    session: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID
+) -> JournalEntry:
+    entry = await session.scalar(
+        select(JournalEntry).where(
+            JournalEntry.id == entry_id,
+            JournalEntry.user_id == user_id,
+            JournalEntry.deleted_at.is_(None),
+        )
+    )
+    if entry is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "journal entry not found")
+    return entry
+
+
+async def soft_delete_journal_entry(
+    session: AsyncSession, user_id: uuid.UUID, entry_id: uuid.UUID
+) -> None:
+    entry = await get_owned_journal_entry(session, user_id, entry_id)
+    entry.deleted_at = datetime.now(UTC)
+    await session.commit()
