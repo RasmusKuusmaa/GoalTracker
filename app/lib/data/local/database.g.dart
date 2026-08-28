@@ -3849,6 +3849,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final CommitmentDao commitmentDao = CommitmentDao(this as AppDatabase);
   late final CompletionDao completionDao = CompletionDao(this as AppDatabase);
   late final JournalDao journalDao = JournalDao(this as AppDatabase);
+  late final JournalEntryDao journalEntryDao = JournalEntryDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

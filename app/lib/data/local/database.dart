@@ -5,13 +5,14 @@ import 'daos/commitment_dao.dart';
 import 'daos/completion_dao.dart';
 import 'daos/goal_dao.dart';
 import 'daos/journal_dao.dart';
+import 'daos/journal_entry_dao.dart';
 import 'tables.dart';
 
 part 'database.g.dart';
 
 @DriftDatabase(
   tables: [Goals, Commitments, Completions, Journals, JournalEntries, SyncState],
-  daos: [GoalDao, CommitmentDao, CompletionDao, JournalDao],
+  daos: [GoalDao, CommitmentDao, CompletionDao, JournalDao, JournalEntryDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'goal_tracker'));
