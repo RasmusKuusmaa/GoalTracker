@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -47,3 +48,23 @@ async def upsert_journal_entry(
     await session.commit()
     await session.refresh(entry)
     return entry
+
+
+async def list_journal_entries(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    journal_id: uuid.UUID,
+    date_from: date,
+    date_to: date,
+) -> list[JournalEntry]:
+    await get_owned_journal(session, user_id, journal_id)
+
+    result = await session.scalars(
+        select(JournalEntry).where(
+            JournalEntry.journal_id == journal_id,
+            JournalEntry.local_date >= date_from,
+            JournalEntry.local_date <= date_to,
+            JournalEntry.deleted_at.is_(None),
+        )
+    )
+    return list(result)
