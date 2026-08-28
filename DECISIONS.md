@@ -31,6 +31,18 @@
   requires a database lookup unavailable at schema-parse time. That check lives in the upsert
   service function once the journal is loaded, mirroring how completion-vs-commitment-type
   validation was done in `services/completions.py` rather than `schemas/completion.py`.
+- Drift local tables store enum-like fields (goal status, commitment type/cadence/comparator,
+  journal kind, completion status) as plain `TextColumn`s, not Drift type converters: keeps the
+  schema simple for v1; Dart-side code converts to/from the app's enum types at the DAO
+  boundary. Numeric fields that are `Decimal` on the backend (`target_value`, completion/journal
+  `value`) are stored as `RealColumn` locally — full decimal precision isn't needed for a value
+  that's only ever displayed and compared client-side, and Drift has no native decimal type.
+- Completions/JournalEntries drift tables enforce `(commitmentId, localDate)` /
+  `(journalId, localDate)` uniqueness with a plain (non-partial) `uniqueKeys` override, unlike
+  the backend's partial index (`WHERE deleted_at IS NULL`): the DAOs always find-and-update the
+  existing local row in place for a given key (including re-clearing `deletedAt` on untick/retick)
+  rather than inserting a new row after a soft delete, so a plain unique index is sufficient and
+  SQLite's partial-index support isn't needed locally.
 - `flutter_riverpod` bumped from `^2.6.1` to `^3.4.2`: `riverpod_generator` (needed as a dev
   dependency) only resolves against Riverpod 3.x; pinning `riverpod_generator` back to an old
   2.x-compatible release seemed worse for a brand-new v1 project than starting on current
