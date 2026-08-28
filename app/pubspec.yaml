@@ -45,6 +45,7 @@ dependencies:
   uuid: ^4.6.0
   intl: ^0.20.3
   fl_chart: ^1.2.0
+  riverpod_annotation: ^4.0.6
 
 dev_dependencies:
   flutter_test:
