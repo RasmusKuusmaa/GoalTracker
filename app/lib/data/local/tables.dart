@@ -104,3 +104,13 @@ class JournalEntries extends Table {
     {journalId, localDate},
   ];
 }
+
+// Singleton table: the app always reads/writes the single row with id 0.
+class SyncState extends Table {
+  IntColumn get id => integer().withDefault(const Constant(0))();
+  TextColumn get cursor => text().nullable()();
+  DateTimeColumn get lastSyncedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
