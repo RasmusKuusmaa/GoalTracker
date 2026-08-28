@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient
 
@@ -89,3 +89,86 @@ async def test_push_rejects_id_collision_with_another_users_row(client: AsyncCli
     )
 
     assert response.status_code == 403
+
+
+async def test_empty_cursor_returns_everything(client: AsyncClient) -> None:
+    headers = await _auth_headers(client, "sync-empty-cursor@example.com")
+    user_id = await _user_id(client, headers)
+    now = datetime.now(UTC).isoformat()
+    goal_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
+    await client.post(
+        "/sync",
+        json={"goals": [_goal_row(user_id, goal_id, now) for goal_id in goal_ids]},
+        headers=headers,
+    )
+
+    response = await client.get("/sync", headers=headers)
+
+    assert response.status_code == 200
+    returned_ids = {goal["id"] for goal in response.json()["goals"]}
+    assert set(goal_ids) <= returned_ids
+
+
+async def test_cursor_returns_only_deltas(client: AsyncClient) -> None:
+    headers = await _auth_headers(client, "sync-deltas@example.com")
+    user_id = await _user_id(client, headers)
+    now = datetime.now(UTC).isoformat()
+    first_goal_id = str(uuid.uuid4())
+    await client.post(
+        "/sync", json={"goals": [_goal_row(user_id, first_goal_id, now)]}, headers=headers
+    )
+
+    first_pull = await client.get("/sync", headers=headers)
+    cursor = first_pull.json()["cursor"]
+
+    second_goal_id = str(uuid.uuid4())
+    later = (datetime.now(UTC) + timedelta(seconds=1)).isoformat()
+    await client.post(
+        "/sync", json={"goals": [_goal_row(user_id, second_goal_id, later)]}, headers=headers
+    )
+
+    delta_pull = await client.get("/sync", params={"cursor": cursor}, headers=headers)
+
+    delta_ids = {goal["id"] for goal in delta_pull.json()["goals"]}
+    assert delta_ids == {second_goal_id}
+
+
+async def test_older_updated_at_does_not_overwrite_newer_row(client: AsyncClient) -> None:
+    headers = await _auth_headers(client, "sync-lww@example.com")
+    user_id = await _user_id(client, headers)
+    goal_id = str(uuid.uuid4())
+    newer = datetime.now(UTC).isoformat()
+    older = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+
+    newer_row = _goal_row(user_id, goal_id, newer)
+    newer_row["title"] = "Newer title"
+    await client.post("/sync", json={"goals": [newer_row]}, headers=headers)
+
+    older_row = _goal_row(user_id, goal_id, older)
+    older_row["title"] = "Stale title"
+    push_response = await client.post("/sync", json={"goals": [older_row]}, headers=headers)
+
+    assert push_response.json()["goals"][0]["title"] == "Newer title"
+
+    pull_response = await client.get("/sync", headers=headers)
+    pulled = next(g for g in pull_response.json()["goals"] if g["id"] == goal_id)
+    assert pulled["title"] == "Newer title"
+
+
+async def test_tombstones_propagate(client: AsyncClient) -> None:
+    headers = await _auth_headers(client, "sync-tombstones@example.com")
+    user_id = await _user_id(client, headers)
+    goal_id = str(uuid.uuid4())
+    created = datetime.now(UTC).isoformat()
+    await client.post(
+        "/sync", json={"goals": [_goal_row(user_id, goal_id, created)]}, headers=headers
+    )
+
+    deleted_at = (datetime.now(UTC) + timedelta(seconds=1)).isoformat()
+    deleted_row = _goal_row(user_id, goal_id, deleted_at)
+    deleted_row["deleted_at"] = deleted_at
+    await client.post("/sync", json={"goals": [deleted_row]}, headers=headers)
+
+    pull_response = await client.get("/sync", headers=headers)
+    pulled = next(g for g in pull_response.json()["goals"] if g["id"] == goal_id)
+    assert pulled["deleted_at"] is not None

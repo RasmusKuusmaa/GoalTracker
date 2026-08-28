@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,16 @@ from app.schemas.sync import (
     SyncPushRequest,
     SyncPushResponse,
 )
+
+
+def _is_newer(incoming: datetime, current: datetime) -> bool:
+    # SQLite (used only in tests) returns naive datetimes even for tz-aware columns,
+    # unlike Postgres, which always round-trips DateTime(timezone=True) as aware.
+    if incoming.tzinfo is None:
+        incoming = incoming.replace(tzinfo=UTC)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    return incoming > current
 
 
 async def _apply_goal(session: AsyncSession, row: GoalSyncRow) -> Goal:
@@ -40,7 +51,7 @@ async def _apply_goal(session: AsyncSession, row: GoalSyncRow) -> Goal:
         return goal
     if existing.user_id != row.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
-    if row.updated_at <= existing.updated_at:
+    if not _is_newer(row.updated_at, existing.updated_at):
         return existing
     existing.parent_id = row.parent_id
     existing.title = row.title
@@ -80,7 +91,7 @@ async def _apply_commitment(session: AsyncSession, row: CommitmentSyncRow) -> Co
         return commitment
     if existing.user_id != row.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
-    if row.updated_at <= existing.updated_at:
+    if not _is_newer(row.updated_at, existing.updated_at):
         return existing
     existing.goal_id = row.goal_id
     existing.journal_id = row.journal_id
@@ -117,7 +128,7 @@ async def _apply_completion(session: AsyncSession, row: CompletionSyncRow) -> Co
         return completion
     if existing.user_id != row.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
-    if row.updated_at <= existing.updated_at:
+    if not _is_newer(row.updated_at, existing.updated_at):
         return existing
     existing.commitment_id = row.commitment_id
     existing.local_date = row.local_date
@@ -146,7 +157,7 @@ async def _apply_journal(session: AsyncSession, row: JournalSyncRow) -> Journal:
         return journal
     if existing.user_id != row.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
-    if row.updated_at <= existing.updated_at:
+    if not _is_newer(row.updated_at, existing.updated_at):
         return existing
     existing.name = row.name
     existing.kind = row.kind
@@ -175,7 +186,7 @@ async def _apply_journal_entry(session: AsyncSession, row: JournalEntrySyncRow) 
         return entry
     if existing.user_id != row.user_id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "cannot push rows owned by another user")
-    if row.updated_at <= existing.updated_at:
+    if not _is_newer(row.updated_at, existing.updated_at):
         return existing
     existing.journal_id = row.journal_id
     existing.local_date = row.local_date
