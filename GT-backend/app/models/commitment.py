@@ -34,7 +34,9 @@ class Commitment(Base, TimestampMixin, SyncMixin):
     id: Mapped[uuid.UUID] = mapped_column(SAUuid, primary_key=True)
     user_id: Mapped[uuid.UUID] = mapped_column(SAUuid, ForeignKey("users.id"))
     goal_id: Mapped[uuid.UUID | None] = mapped_column(SAUuid, ForeignKey("goals.id"), nullable=True)
-    journal_id: Mapped[uuid.UUID | None] = mapped_column(SAUuid, nullable=True)
+    journal_id: Mapped[uuid.UUID | None] = mapped_column(
+        SAUuid, ForeignKey("journals.id"), nullable=True
+    )
     title: Mapped[str] = mapped_column(String)
     type: Mapped[CommitmentType] = mapped_column(SAEnum(CommitmentType, name="commitment_type"))
     cadence: Mapped[CommitmentCadence] = mapped_column(

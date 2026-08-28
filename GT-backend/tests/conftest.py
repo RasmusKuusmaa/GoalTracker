@@ -11,6 +11,13 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base, SyncMixin
 from app.db.session import get_session
 from app.main import app
+from app.models import (  # noqa: F401  ensure models are registered on Base.metadata
+    commitment,
+    completion,
+    goal,
+    journal,
+    user,
+)
 
 # SQLite has no equivalent to Postgres's Identity()/bigserial for a non-primary-key
 # column, so change_seq is never populated by the database itself under the sqlite

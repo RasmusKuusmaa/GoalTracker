@@ -13,6 +13,7 @@ from app.models import (  # noqa: F401  ensure models are registered on Base.met
     commitment,
     completion,
     goal,
+    journal,
     user,
 )
 
