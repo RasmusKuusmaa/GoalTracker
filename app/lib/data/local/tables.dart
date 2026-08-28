@@ -83,3 +83,24 @@ class Journals extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class JournalEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get userId => text()();
+  TextColumn get journalId => text()();
+  DateTimeColumn get localDate => dateTime()();
+  TextColumn get body => text().nullable()();
+  RealColumn get value => real().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {journalId, localDate},
+  ];
+}
