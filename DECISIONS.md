@@ -31,6 +31,9 @@
   requires a database lookup unavailable at schema-parse time. That check lives in the upsert
   service function once the journal is loaded, mirroring how completion-vs-commitment-type
   validation was done in `services/completions.py` rather than `schemas/completion.py`.
+- Flutter app org set to `com.goaltracker` (`flutter create --org com.goaltracker`): the spec
+  does not name a real org/domain, and this project has no distribution identity yet. Package
+  name kept as the default derived from the `app/` directory name.
 - Sync rows (`app/schemas/sync.py`) omit `change_seq`: the cursor is opaque to the client, and
   `change_seq` is a server-internal ordering column, not app data. The cursor itself is planned
   as a per-entity map of last-seen `change_seq` values (JSON-encoded into the opaque string),
