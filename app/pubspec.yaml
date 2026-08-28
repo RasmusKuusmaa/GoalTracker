@@ -46,6 +46,7 @@ dependencies:
   intl: ^0.20.3
   fl_chart: ^1.2.0
   riverpod_annotation: ^4.0.6
+  flutter_timezone: ^5.1.0
 
 dev_dependencies:
   flutter_test:
