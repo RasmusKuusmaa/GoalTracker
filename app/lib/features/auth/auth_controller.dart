@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../data/remote/auth_api.dart';
@@ -12,7 +13,21 @@ part 'auth_controller.g.dart';
 class AuthController extends _$AuthController {
   @override
   Future<UserProfile?> build() async {
-    return null;
+    final accessToken = await ref.read(tokenStoreProvider).readAccessToken();
+    if (accessToken == null) return null;
+
+    try {
+      return await ref.read(authApiProvider).me();
+    } on DioException catch (error) {
+      // A definitively dead session (both tokens rejected, refresh already
+      // attempted by the interceptor) starts clean. Any other failure
+      // (offline at launch, etc.) leaves the stored tokens alone so restore
+      // can succeed once connectivity returns.
+      if (error.response?.statusCode == 401) {
+        await ref.read(tokenStoreProvider).clear();
+      }
+      return null;
+    }
   }
 
   Future<void> login({required String email, required String password}) async {
